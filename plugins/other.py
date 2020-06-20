@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import requests
 from math import *
 from nonebot import on_command, CommandSession, permission
@@ -18,25 +19,37 @@ async def jisuan(session: CommandSession):
         expression = session.current_arg_text.strip()
         if not expression:
             await session.pause("请输入你想计算的算术")
-        expression = expression.replace('（', '(')
-        expression = expression.replace('）', ')')
-        count1 = count2 = 0
-        for e in expression:
-            if e == '(':
-                count1 += 1
-            elif e == ')':
-                count2 += 1
-        if not count1 == count2:
-            await session.pause('啊哦，请补全你输入算术中的括号 >_<')
-        result = expression + '=' + str(eval(expression))
-        print(result)
-        await session.send(result)
+        if re.match(r"^\d*$", expression):
+            print(1)
+            Dec = eval(expression)
+            Bin = bin(Dec)
+            Oct = oct(Dec)
+            Hex = hex(Dec)
+            await session.send(f"进制转换\n"
+                               f"二进制：{Bin}\n"
+                               f"八进制：{Oct}\n"
+                               f"十进制：{Dec}\n"
+                               f"十六进制：{Hex}")
+        else:
+            expression = expression.replace('（', '(')
+            expression = expression.replace('）', ')')
+            count1 = count2 = 0
+            for e in expression:
+                if e == '(':
+                    count1 += 1
+                elif e == ')':
+                    count2 += 1
+            if not count1 == count2:
+                await session.pause('啊哦，请补全你输入算术中的括号 >_<')
+            result = expression + '=' + str(eval(expression))
+            print(result)
+            await session.send(result)
     except NameError:
         await session.send('这个算术题好难,人家算不出来呢 >_<')
 
 
 @on_command('member_count', aliases=['总人数', '群人数'],
-            permission=permission.GROUP_ADMIN, only_to_me=False)  # 只有管理员可以调用
+            permission=permission.GROUP_ADMIN | permission.SUPERUSER, only_to_me=False)  # 只有管理员可以调用
 async def get_member_count(session: CommandSession):
     group_id = session.ctx['group_id']
     try:
@@ -45,6 +58,82 @@ async def get_member_count(session: CommandSession):
     except:
         await session.send("无法获取")
         return
+
+
+@on_command('send_like', aliases=['赞'])
+async def zan(session: CommandSession):
+    await session.bot.send_like(user_id=session.ctx.user_id, times=10)
+    await session.send("好友赞 成功")
+
+
+@on_command('禁言', aliases=['ban'], only_to_me=False)
+async def ban_member(session: CommandSession):
+    print(session.ctx)
+    group_id = session.ctx.group_id
+    user_id = session.ctx.user_id
+    try:
+        ban_id = re.findall(r"\[CQ:at,qq=(.*?)\]", session.ctx.raw_message)[0]
+    except IndexError:
+        await session.send("艾特一下你要禁言的用户吧 >_<")
+        return ''
+    judge = await judge_permission(session, ban_id, user_id)
+    if not judge:
+        return ''
+    try:
+        await session.bot.set_group_ban(group_id=group_id, user_id=ban_id,
+                                        duration=60*random.randint(1, 10))
+        await session.send(f"[CQ:at,qq={user_id}] 已禁言")
+        print("禁言成功")
+    except:
+        await session.send(f"[CQ:at,qq={user_id}] 404 禁言失败 >_<")
+        print("404 禁言失败")
+
+
+@on_command('解除禁言', aliases=['free'], permission=permission.GROUP_ADMIN | permission.SUPERUSER, only_to_me=False)
+async def ban_member(session: CommandSession):
+    group_id = session.ctx.group_id
+    user_id = session.ctx.user_id
+    try:
+        ban_id = re.findall(r"\[CQ:at,qq=(.*?)\]", session.ctx.raw_message)[0]
+    except IndexError:
+        await session.send("艾特一下你要解除禁言的用户吧 >_<")
+        return ''
+    judge = await judge_permission(session, ban_id, user_id)
+    if not judge:
+        return ''
+    try:
+        await session.bot.set_group_ban(group_id=group_id, user_id=ban_id, duration=0)
+        await session.send(f"[CQ:at,qq={user_id}] 已解除禁言")
+    except:
+        await session.send(f"[CQ:at,qq={user_id}] 404 解除禁言失败 >_<")
+
+
+async def judge_permission(session, ban_id, user_id):
+    member_list = await session.bot.get_group_member_list(group_id=session.ctx.group_id)
+    for member in member_list:
+        if member['user_id'] == user_id:
+            print(member['user_id'], 1)
+            if member['role'] == 'member':
+                print(member['user_id'], 1)
+                await session.send("权限不足 >_<")
+                return 0
+        if member['user_id'] == session.ctx.self_id:
+            print(member['user_id'], 2)
+            if member['role'] == 'member':
+                print(member['user_id'], 2)
+                await session.send("权限不足 >_<")
+                return 0
+        if member['user_id'] == eval(ban_id):
+            print(member['user_id'], 3)
+            if member['role'] in ['admin', 'owner']:
+                print(member['user_id'], 3)
+                await session.send("权限不足 >_<")
+                return 0
+        if session.ctx.self_id == eval(ban_id):
+            print(member['user_id'], 4)
+            await session.send("机智如我又怎么会自己禁言自己 [CQ:face,id=12]")
+            return 0
+    return 1
 
 
 @on_notice('group_increase')
@@ -93,3 +182,9 @@ async def ask(session: CommandSession):
         else:
             reply = 'No'
     await session.send(reply)
+
+
+@on_command('help', only_to_me=False)
+async def help(session: CommandSession):
+    await session.send("我的源码放在https://github.com/lv101/QrobotPlus\n"
+                       "尽情探索吧~")
