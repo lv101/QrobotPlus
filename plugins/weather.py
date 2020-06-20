@@ -49,8 +49,8 @@ def get_weather(arg):
 
     paylod = {
         'version': 'v6',
-        'appid': 84981977,
-        'appsecret': '99mRbV1v',
+        'appid': ,
+        'appsecret': '',
         'city': city
     }
 
