@@ -66,11 +66,20 @@ async def zan(session: CommandSession):
     await session.send("好友赞 成功")
 
 
-@on_command('禁言', aliases=['ban'], only_to_me=False)
+@on_command('禁言', aliases=['ban'], permission=permission.GROUP_MEMBER | permission.GROUP_OWNER |
+            permission.GROUP_ADMIN | permission.SUPERUSER, only_to_me=False)
 async def ban_member(session: CommandSession):
-    print(session.ctx)
     group_id = session.ctx.group_id
     user_id = session.ctx.user_id
+    if session.current_arg_text == 'all':
+        judge = await judge_permission(session, ban_id='0', user_id=user_id)
+        if not judge:
+            return ''
+        print(group_id)
+        await session.bot.set_group_whole_ban(group_id=group_id, enable=True)
+        await session.send(f"[CQ:at,qq={user_id}] 已开启 全员禁言")
+        print("全员禁言成功")
+        return ''
     try:
         ban_id = re.findall(r"\[CQ:at,qq=(.*?)\]", session.ctx.raw_message)[0]
     except IndexError:
@@ -89,10 +98,19 @@ async def ban_member(session: CommandSession):
         print("404 禁言失败")
 
 
-@on_command('解除禁言', aliases=['free'], permission=permission.GROUP_ADMIN | permission.SUPERUSER, only_to_me=False)
+@on_command('解除禁言', aliases=['free'], permission=permission.GROUP_MEMBER | permission.GROUP_OWNER |
+            permission.GROUP_ADMIN | permission.SUPERUSER, only_to_me=False)
 async def ban_member(session: CommandSession):
     group_id = session.ctx.group_id
     user_id = session.ctx.user_id
+    if session.current_arg_text == 'all':
+        judge = await judge_permission(session, ban_id='0', user_id=user_id)
+        if not judge:
+            return ''
+        await session.bot.set_group_whole_ban(group_id=group_id, enable=False)
+        await session.send(f"[CQ:at,qq={user_id}] 已解除 全员禁言")
+        print("解除 全员禁言 成功")
+        return ''
     try:
         ban_id = re.findall(r"\[CQ:at,qq=(.*?)\]", session.ctx.raw_message)[0]
     except IndexError:
@@ -112,25 +130,18 @@ async def judge_permission(session, ban_id, user_id):
     member_list = await session.bot.get_group_member_list(group_id=session.ctx.group_id)
     for member in member_list:
         if member['user_id'] == user_id:
-            print(member['user_id'], 1)
             if member['role'] == 'member':
-                print(member['user_id'], 1)
-                await session.send("权限不足 >_<")
+                await session.send(f"[CQ:at,qq={user_id}] 权限不足 >_<")
                 return 0
         if member['user_id'] == session.ctx.self_id:
-            print(member['user_id'], 2)
             if member['role'] == 'member':
-                print(member['user_id'], 2)
-                await session.send("权限不足 >_<")
+                await session.send(f"[CQ:at,qq={user_id}] 权限不足 >_<")
                 return 0
         if member['user_id'] == eval(ban_id):
-            print(member['user_id'], 3)
             if member['role'] in ['admin', 'owner']:
-                print(member['user_id'], 3)
-                await session.send("权限不足 >_<")
+                await session.send(f"[CQ:at,qq={user_id}] 权限不足 >_<")
                 return 0
         if session.ctx.self_id == eval(ban_id):
-            print(member['user_id'], 4)
             await session.send("机智如我又怎么会自己禁言自己 [CQ:face,id=12]")
             return 0
     return 1
@@ -159,10 +170,10 @@ async def sxcx(session: CommandSession):
         if not trans:
             await session.send(f"未找到[{data['text']}]的释义，换个词试试吧 >_<")
         elif data['text'] == name:
-            await session.send(f"[{name}]可能的含义为：\n{'，'.join(trans)}")
+            await session.send(f"[{name}]可能的含义有：\n{' | '.join(trans)}")
         else:
             await session.send(f"未找到[{data['text']}]的释义，已为您找到相近词[{name}]释义如下：\n"
-                  f"{'，'.join(trans)}")
+                  f"{' | '.join(trans)}")
     except:
         await session.send('404 查询失败，换个关键词试试吧 >_<')
 
