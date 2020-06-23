@@ -37,16 +37,25 @@ async def _(session: CommandSession):
 
 def get_weather(arg):
     with open('city.json', 'r', encoding='unicode-escape') as f:
-        datas = json.loads(f.read())
-    city = None
-    for data in datas:
-        if re.findall(data['cityZh'], arg):
-            city = data['cityZh']
+        citys = json.loads(f.read())
+    city = ''
+    province_ = ''
+    province = '中国'
+    for city_ in citys:
+        if re.findall(city_['cityZh'], arg):
+            city = city_['cityZh']
+            province = city_['provinceZh']
             print(city)
-
-    if not city:
+            break
+        if re.findall(city_['provinceZh'], arg):
+            province_ = city_['provinceZh']
+            break
+    if not city and not province_:
         time.sleep(3)
-        return "啊哦,没有查到该地的信息,换个城市试试吧 >_<"
+        return "啊哦，没有查到该地的信息，换个城市试试吧 >_<"
+    elif not city and province_:
+        time.sleep(3)
+        return "请输入详细的城市名试试吧 >_<"
 
     paylod = {
               'version': 'v1',
@@ -66,6 +75,6 @@ def get_weather(arg):
         for x in data['index']:
             desc_list.append(x['desc'])
         desc = desc_list[random.randint(0, len(desc_list) - 1)]
-        weather_list.append(f"{text['country']}{text['city']}\n"f"更新时间：{text['update_time']}\n"
+        weather_list.append(f"{province}{city}\n"f"更新时间：{text['update_time']}\n"
                f"{data['day']}\n"f"天气情况：{data['wea']}\n平均温度：{data['tem']}\n{desc}")
     return weather_list
