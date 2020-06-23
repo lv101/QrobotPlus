@@ -37,15 +37,24 @@ async def _(session: CommandSession):
 def get_weather(arg):
     with open('city.json', 'r', encoding='unicode-escape') as f:
         citys = json.loads(f.read())
-    city = None
+    city = ''
+    province_ = ''
+    province = '中国'
     for city_ in citys:
         if re.findall(city_['cityZh'], arg):
             city = city_['cityZh']
+            province = city_['provinceZh']
             print(city)
             break
-    if not city:
+        if re.findall(city_['provinceZh'], arg):
+            province_ = city_['provinceZh']
+            break
+    if not city and not province_:
         time.sleep(3)
         return "啊哦，没有查到该地的信息，换个城市试试吧 >_<"
+    elif not city and province_:
+        time.sleep(3)
+        return "请输入详细的城市名试试吧 >_<"
 
     paylod = {
         'version': 'v6',
@@ -57,7 +66,10 @@ def get_weather(arg):
     url = 'https://tianqiapi.com/api'
     r = requests.get(url, params=paylod).content.decode('unicode-escape').replace('<\/em><em>', '')
     data = json.loads(r)
-
-    return f"{data['country']}{data['city']}\n更新时间：{data['update_time']}\n" \
-        f"天气情况：{data['wea']}\n实时温度：{data['tem']}\n气压：{data['pressure']}hPa\n" \
-        f"空气质量：{data['air']}\n"f"空气质量等级：{data['air_level']}\n{data['air_tips']}"
+    if data['city'] == city:
+        return f"{province}{city}\n更新时间：{data['update_time']}\n" \
+            f"天气情况：{data['wea']}\n实时温度：{data['tem']}\n气压：{data['pressure']}hPa\n" \
+            f"空气质量：{data['air']}\n"f"空气质量等级：{data['air_level']}\n{data['air_tips']}"
+    else:
+        time.sleep(3)
+        return "啊哦，没有查到该地的信息，换个城市试试吧 >_<"
