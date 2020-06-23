@@ -1,14 +1,17 @@
 import json
 import random
 import re
+import time
 import requests
 from math import *
+from fake_useragent import UserAgent
 from nonebot import on_command, CommandSession, permission
 from nonebot import on_notice, NoticeSession
 
 
 @on_command('chp', only_to_me=False)
 async def chp(session: CommandSession):
+    print(session.ctx)
     r = requests.get('https://chp.shadiao.app/api.php')
     await session.send(r.text)
 
@@ -58,6 +61,37 @@ async def get_member_count(session: CommandSession):
     except:
         await session.send("无法获取")
         return
+
+
+@on_command('!lsj', aliases=['!xhtu'], only_to_me=False)
+async def xhtu(session: CommandSession):
+    paylod = {'apikey': '',
+              'r18': 1,
+              'num': 1,
+              'size1200': True
+              }
+    url = "https://api.lolicon.app/setu/"
+    text = requests.get(url, params=paylod).json()
+    pic_url = text['data'][0]['url']
+    title = text['data'][0]['title']
+    r18 = text['data'][0]['r18']
+    try:
+        await session.send(f"title：{title}\nurl：{pic_url}")
+        print(f"title：{title}\nurl：{pic_url}\nr18：{r18}\n{text['data'][0]['tags']}")
+    except:
+        await session.send("404 查询失败 >_<")
+    try:
+        if title == '无题':
+            timestr = time.localtime()
+            file_name = time.strftime("%Y-%m-%d_%H-%M-%S", timestr)
+            title = file_name
+        path = "D:/picture/xht/" + title + '.jpg'
+        r = requests.get(pic_url, headers={"User-Agent": UserAgent().random})
+        r.raise_for_status()
+        with open(path, 'wb') as f:
+            f.write(r.content)
+    except:
+        pass
 
 
 @on_command('send_like', aliases=['赞'])
@@ -197,5 +231,17 @@ async def ask(session: CommandSession):
 
 @on_command('help', only_to_me=False)
 async def help(session: CommandSession):
+    reply = "\n        帮助菜单\n" \
+            "\t/ask -> 推衍\n" \
+            "\t/chp -> 彩虹屁\n" \
+            "\t/echo -> 复读机\n" \
+            "\t/jisuan -> 计算器\n" \
+            "\t/sxcx -> 缩写查询\n" \
+            "\t/fanyi -> 有道翻译\n" \
+            "\t/tianqi -> 天气预报\n" \
+            "\t/tianqi7 -> 未来7天天气\n" \
+            "\t/ban/free -> 禁言/解禁\n" \
+            "\t/xiuxian_help -> 修仙系统"
+    await session.send(reply, at_sender=True)
     await session.send("我的源码放在https://github.com/lv101/QrobotPlus\n"
                        "尽情探索吧~")
