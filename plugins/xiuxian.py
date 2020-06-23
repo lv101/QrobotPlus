@@ -12,51 +12,51 @@ async def xiuxian(session: CommandSession):
             yesterday = str(datetime.date.today() + datetime.timedelta(-1))
             all_datas = json.loads(f.read())
             group_ids = []
-            # try:
-            for datas in all_datas:
-                group_ids.append(datas['group_id'])
-                if datas['group_id'] == session.ctx.group_id:
-                    user_ids = []
-                    for user in datas['user']:
-                        user_ids.append(user['user_id'])
-                        if user['user_id'] == session.ctx.user_id:
-                            if today in user['data']['date']:
-                                await session.send("道友今日已完成修炼，修行之道不可操之过急", at_sender=True)
-                            else:
+            try:
+                for datas in all_datas:
+                    group_ids.append(datas['group_id'])
+                    if datas['group_id'] == session.ctx.group_id:
+                        user_ids = []
+                        for user in datas['user']:
+                            user_ids.append(user['user_id'])
+                            if user['user_id'] == session.ctx.user_id:
+                                if today in user['data']['date']:
+                                    await session.send("道友今日已完成修炼，修行之道不可操之过急", at_sender=True)
+                                else:
 
-                                    user['data']['counts'] += 1
-                                    user['data']['date'].append(today)
-                                    result1 = await check_effort(yesterday, user['data'])  # 检查昨日是否修行，奖励修行点
-                                    result2 = await check_talent(user['data'])             # 检查修行等级，奖励天赋点
-                                    user['data']['score'] += 5 + user['data']['effort'] + user['data']['talent']
+                                        user['data']['counts'] += 1
+                                        user['data']['date'].append(today)
+                                        result1 = await check_effort(yesterday, user['data'])  # 检查昨日是否修行，奖励修行点
+                                        result2 = await check_talent(user['data'])             # 检查修行等级，奖励天赋点
+                                        user['data']['score'] += 5 + user['data']['effort'] + user['data']['talent']
 
-                                    result2 = await check_talent(user['data'])
-                                    if result2:
-                                        result2 = result2 + '\n'
-                                    await session.send(result1 + result2 + f"道友当前天赋点：{user['data']['talent']} | 修行点：{user['data']['effort']}\n仙途漫漫，要坚持修炼哦", at_sender=True)
+                                        result2 = await check_talent(user['data'])
+                                        if result2:
+                                            result2 = result2 + '\n'
+                                        await session.send(result1 + result2 + f"道友当前天赋点：{user['data']['talent']} | 修行点：{user['data']['effort']}\n仙途漫漫，要坚持修炼哦", at_sender=True)
 
-                    if session.ctx.user_id not in user_ids:
-                        nickname = session.current_arg_text.strip()
-                        if not nickname:
-                            await session.pause("请输入你的修行昵称(6个字符以内)：")
-                        if not nickname:
-                            nickname = '修行者'
-                        datas['user'].append({'user_id': session.ctx.user_id, 'nickname': nickname[:6], 'data': {'start': today, 'counts': 1,
-                                              'count': 1, 'talent': 1, 'effort': 0, 'score': 5, 'level': 0, 'date': [today]}})
-                        await session.send("修炼成功,达成成就[初窥仙途]\n道友当前天赋点：1 | 修行点：0", at_sender=True)
+                        if session.ctx.user_id not in user_ids:
+                            nickname = session.current_arg_text.strip()
+                            if not nickname:
+                                await session.pause("请输入你的修行昵称(6个字符以内)：")
+                            if not nickname:
+                                nickname = '修行者'
+                            datas['user'].append({'user_id': session.ctx.user_id, 'nickname': nickname[:6], 'data': {'start': today, 'counts': 1,
+                                                  'count': 1, 'talent': 1, 'effort': 0, 'score': 5, 'level': 0, 'date': [today]}})
+                            await session.send("修炼成功,达成成就[初窥仙途]\n道友当前天赋点：1 | 修行点：0", at_sender=True)
 
-            if session.ctx.group_id not in group_ids:
-                nickname = session.current_arg_text.strip()
-                if not nickname:
-                    await session.pause("请输入你的修行昵称(6个字符以内)：")
-                if not nickname:
-                    nickname = '修行者'
-                all_datas.append({'group_id': session.ctx.group_id, 'user': [{'user_id': session.ctx.user_id, 'nickname': nickname[:6],
-                                  'data': {'start': today, 'counts': 1, 'count': 1, 'talent': 1, 'effort': 0,
-                                           'score': 5, 'level': 0, 'date': [today]}}]})
-                await session.send("修炼成功,达成成就[初窥仙途]\n道友当前天赋点：1 | 修行点：0", at_sender=True)
-            # except:
-            #     await session.send("啊哦，仙网404，请再尝试修炼一次吧", at_sender=True)
+                if session.ctx.group_id not in group_ids:
+                    nickname = session.current_arg_text.strip()
+                    if not nickname:
+                        await session.pause("请输入你的修行昵称(6个字符以内)：")
+                    if not nickname:
+                        nickname = '修行者'
+                    all_datas.append({'group_id': session.ctx.group_id, 'user': [{'user_id': session.ctx.user_id, 'nickname': nickname[:6],
+                                      'data': {'start': today, 'counts': 1, 'count': 1, 'talent': 1, 'effort': 0,
+                                               'score': 5, 'level': 0, 'date': [today]}}]})
+                    await session.send("修炼成功,达成成就[初窥仙途]\n道友当前天赋点：1 | 修行点：0", at_sender=True)
+            except:
+                await session.send("啊哦，仙网404，请再尝试修炼一次吧", at_sender=True)
         with open('xiuxian_rank.json', 'w') as f:
             json.dump(all_datas, f)
     except FileNotFoundError:
@@ -102,7 +102,7 @@ async def view_rank(session: CommandSession):
         data = sorted(data, key=lambda x: x[5], reverse=True)
         for i in range(len(data)):
             data[i][0] = f'{i+1}' + data[i][0]
-            del data[i][4]
+            del data[i][5]
             rank.append(' | '.join(data[i]))
         await session.send('\n-------修仙排行榜-------\n'+'\n'.join(rank)+'\n'+'-'*22, at_sender=True)
 
@@ -199,7 +199,6 @@ async def check_level(data):            # 检查修炼等级
         return 1
 
 
-
 @on_command('del_rank', permission=permission.GROUP_OWNER | permission.SUPERUSER)
 async def del_rank(session: CommandSession):
     with open('xiuxian_rank.json', 'r') as f:
@@ -223,3 +222,13 @@ async def del_all_rank(session: CommandSession):
     with open('xiuxian_rank.json', 'w') as f:
         json.dump([], f)
     await session.send("数据已重置", at_sender=True)
+
+
+@on_command('xiuxian_help', permission=permission.GROUP_MEMBER, only_to_me=False)
+async def xiuxian_help(session: CommandSession):
+    result = "\n修仙系统是一个每日签到获取经验值的虚拟小游戏，随着经验值的增长，你可以突破不同的境界，境界越高，突破难度越大。\n" \
+             "修仙系统常用指令有：\n" \
+             "\t/xiuxian -> 每日签到\n" \
+             "\t/view_rank -> 查看排行榜\n" \
+             "\t/del_rank -> 清除排行榜记录(仅群主可用，该指令会清除当前群的所有修仙记录，慎用！)"
+    await session.send(result, at_sender=True)
